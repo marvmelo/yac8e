@@ -1,4 +1,5 @@
 use std::fs;
+pub mod gfx;
 
 pub struct Chip8 {
     pub opcode: u16,
