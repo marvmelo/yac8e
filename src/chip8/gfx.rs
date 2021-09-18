@@ -5,6 +5,31 @@ use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use std::time::Duration;
 
+pub struct Screen {
+    screen: sdl2::render::Canvas<sdl2::video::Window>,
+}
+
+impl Screen {
+
+    pub fn init() -> Screen {
+
+        let sdl_context = sdl2::init().unwrap();
+        let video_subsystem = sdl_context.video().unwrap();
+        let window = video_subsystem.window("rust-sdl2 demo", 640, 320)
+        .position_centered()
+        .build()
+        .unwrap();
+        let canvas = window.into_canvas().build().unwrap();
+        
+        return Screen {screen: canvas};
+
+    }
+
+    pub
+}
+
+
+
 pub fn test_fn() {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();

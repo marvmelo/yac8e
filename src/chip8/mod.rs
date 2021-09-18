@@ -14,11 +14,12 @@ pub struct Chip8 {
     sp: u16,
     key: [bool; 16],
     draw_flag: bool,
+    screen: gfx::Screen,
 }
 
 impl Chip8 {
 
-    pub fn initialize() -> Chip8 {
+    pub fn init() -> Chip8 {
 
         let font_set: [u8; 80]  =
         [
@@ -40,6 +41,8 @@ impl Chip8 {
           0xF0, 0x80, 0xF0, 0x80, 0x80  // F
         ];
 
+        let canvas = gfx::Screen::init();
+
         let mut cpu: Chip8 = Chip8  {
             opcode: 0,
             memory: [0; 4096],
@@ -53,6 +56,7 @@ impl Chip8 {
             sp: 0,
             key: [false; 16],
             draw_flag: false,
+            screen: canvas,
         };
 
         for n in 1..80 {
