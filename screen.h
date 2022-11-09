@@ -17,9 +17,21 @@ public:
     Screen();
     int Draw(unsigned char*, int, int, int);
     void Render();
+    void Clear();
 };
 
 Screen::Screen()
+{
+    for (int i = 0; i < WIDTH; i++)
+    {
+        for (int j = 0; j < HEIGHT; j++)
+        {
+            screenBuffer[i][j] = 0;
+        }
+    }
+}
+
+void Screen::Clear()
 {
     for (int i = 0; i < WIDTH; i++)
     {
@@ -54,10 +66,7 @@ int Screen::Draw(unsigned char *spritesPtr, int X, int Y, int nibble)
             int currentX = (X + i) % WIDTH;
             int currentBit = GetBit(byte, i);
             screenBuffer[currentX][currentY] ^= currentBit;
-            if (screenBuffer[currentX][currentY] & currentBit)
-            {
-                colisionFlag = TRUE;
-            }
+            colisionFlag = (screenBuffer[currentX][currentY] & currentBit) ? TRUE : FALSE;
         }
     }
     Render();
