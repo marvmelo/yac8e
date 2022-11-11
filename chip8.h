@@ -2,8 +2,8 @@
 #include <iomanip>
 #include <cstdlib>
 #include <raylib.h>
-#include "misc.h"
 #include "screen.h"
+#include "audiodevice.h"
 #define WIDTH 64
 #define HEIGHT 32
 #define FACTOR 10
@@ -25,6 +25,7 @@ private:
     unsigned short int stack[16];
 
     Screen screen;
+    AudioDevice audioDevice;
 
     KeyboardKey keys[16];
 
@@ -38,6 +39,7 @@ public:
     void ExecFPRefix(unsigned short int);
     void WaitKeyPress(unsigned short int);
     void StoreBCD();
+    void Cycle();
 };
 
 Chip8::Chip8(/* args */)
@@ -275,4 +277,27 @@ void Chip8::DecodeExecute(unsigned short int opcode)
         cout << "Opcode " << setfill('0') << setw(4) << hex << opcode << "not recognized.";
         break;
     }
+}
+
+void Chip8::Cycle()
+{
+    if (delayTimer>0)
+    {
+        delayTimer--;
+    }
+    if (soundTimer>0 && !audioDevice.IsPlaying())
+    {   
+        audioDevice.Start();
+        soundTimer--;
+    }
+    else if (soundTimer>0)
+    {
+        soundTimer--;
+    }
+    else if (audioDevice.IsPlaying())
+    {
+        audioDevice.Stop();
+    }
+    unsigned short int opcode = Fetch();
+    DecodeExecute(opcode);
 }
