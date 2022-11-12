@@ -1,6 +1,7 @@
 #include <iostream>
 #include <iomanip>
 #include <cstdlib>
+#include <math.h>
 #include <raylib.h>
 #include "screen.h"
 #include "audiodevice.h"
@@ -30,7 +31,7 @@ private:
     KeyboardKey keys[16];
 
 public:
-    Chip8(/* args */);
+    Chip8(char *, int);
     unsigned short int Fetch();
     void DecodeExecute(unsigned short int);
     void ExecZeroPrefix(unsigned short int);
@@ -42,8 +43,56 @@ public:
     void Cycle();
 };
 
-Chip8::Chip8(/* args */)
+Chip8::Chip8(char *ROMArray, int size)
 {
+    int ROMsize = fmin(size, 3584);
+    for (int i = 0; i < ROMsize; i++)
+    {
+        memory[0x200+i] = (unsigned char)ROMArray[i];
+    }
+    for (int i = 0; i < 16; i++)
+    {
+        V[i] = 0;
+    }
+    delayTimer = 0;
+    soundTimer = 0;
+    I = 0;
+    PC = 0x200;
+    SP = -1;
+    for (int i = 0; i < 16; i++)
+    {
+        stack[i] = 0;
+    }
+    screen = Screen();
+    audioDevice =AudioDevice();
+    KeyboardKey keysTemp[16] = {KEY_ONE, KEY_TWO, KEY_THREE, KEY_Q, 
+                                KEY_W, KEY_E, KEY_A, KEY_S, 
+                                KEY_D, KEY_Z, KEY_X, KEY_C, 
+                                KEY_FOUR, KEY_R, KEY_F, KEY_V};
+    unsigned char fontSet[80]  =
+        {
+        0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
+        0x20, 0x60, 0x20, 0x20, 0x70, // 1
+        0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
+        0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
+        0x90, 0x90, 0xF0, 0x10, 0x10, // 4
+        0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
+        0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
+        0xF0, 0x10, 0x20, 0x40, 0x40, // 7
+        0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
+        0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
+        0xF0, 0x90, 0xF0, 0x90, 0x90, // A
+        0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
+        0xF0, 0x80, 0x80, 0x80, 0xF0, // C
+        0xE0, 0x90, 0x90, 0x90, 0xE0, // D
+        0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
+        0xF0, 0x80, 0xF0, 0x80, 0x80  // F
+        };
+        for (int i = 0; i < 80; i++)
+        {
+            memory[i] = fontSet[i];
+        }
+        
 }
 
 unsigned short int Chip8::Fetch()
@@ -54,6 +103,11 @@ unsigned short int Chip8::Fetch()
     opcode = opcode + memory[PC+1];
     PC = PC + 2;
     return opcode;
+}
+
+void Chip8::StoreBCD()
+{
+    return;
 }
 
 void Chip8::ExecZeroPrefix(unsigned short int opcode)
@@ -129,7 +183,7 @@ void Chip8::WaitKeyPress(unsigned short int opcode)
             if (IsKeyDown(keys[i]))
             {
                 keyHasBeenPressed = TRUE;
-                V[x] = i+1;
+                V[x] = i;
             }
         }
     }
@@ -202,6 +256,12 @@ void Chip8::SkipIfKeyDown(unsigned short int opcode)
 void Chip8::DecodeExecute(unsigned short int opcode)
 {
     unsigned char opcodePrefix = (opcode & 0xF000) >> 12;
+    int x;
+    int y;
+    unsigned char immediate8;
+    unsigned char randNumber;
+    unsigned short int immediate16;
+    int n;
     switch (opcodePrefix)
     {
     case 0x0:
@@ -216,55 +276,55 @@ void Chip8::DecodeExecute(unsigned short int opcode)
         PC = (opcode & 0x0FFF);
         break;
     case 0x3:
-        int x = (opcode & 0x0F00) >> 8;
-        unsigned char immediate = (opcode & 0x00FF);
-        PC = (V[x]==immediate) ? PC+2 : PC;
+        x = (opcode & 0x0F00) >> 8;
+        immediate8 = (opcode & 0x00FF);
+        PC = (V[x]==immediate8) ? PC+2 : PC;
         break;
     case 0x4:
-        int x = (opcode & 0x0F00) >> 8;
-        unsigned char immediate = (opcode & 0x00FF);
-        PC = (V[x]==immediate) ? PC : PC+2;
+        x = (opcode & 0x0F00) >> 8;
+        immediate8 = (opcode & 0x00FF);
+        PC = (V[x]==immediate8) ? PC : PC+2;
         break;
     case 0x5:
-        int x = (opcode & 0x0F00) >> 8;
-        int y = (opcode & 0x00F0) >> 4;
+        x = (opcode & 0x0F00) >> 8;
+        y = (opcode & 0x00F0) >> 4;
         PC = (V[x]==V[y]) ? PC+2 : PC;
         break;
     case 0x6:
-        int x = (opcode & 0x0F00) >> 8;
-        unsigned char immediate = (opcode & 0x00FF);
-        V[x] = immediate;
+        x = (opcode & 0x0F00) >> 8;
+        immediate8 = (opcode & 0x00FF);
+        V[x] = immediate8;
         break;
     case 0x7:
-        int x = (opcode & 0x0F00) >> 8;
-        unsigned char immediate = (opcode & 0x00FF);
-        V[x] += immediate;
+        x = (opcode & 0x0F00) >> 8;
+        immediate8 = (opcode & 0x00FF);
+        V[x] += immediate8;
         break;
     case 0x8:
         ExecSet(opcode);
         break;
     case 0x9:
-        int x = (opcode & 0x0F00) >> 8;
-        int y = (opcode & 0x00F0) >> 4;
+        x = (opcode & 0x0F00) >> 8;
+        y = (opcode & 0x00F0) >> 4;
         PC = (V[x]!=V[y]) ? PC+2 : PC;
         break;
     case 0xA:
-        unsigned short int immediate = (opcode & 0x0FFF);
-        I = immediate;
+        immediate16 = (opcode & 0x0FFF);
+        I = immediate16;
         break;
     case 0xB:
         PC = (opcode & 0X0FFF) + V[0];
         break;
     case 0xC:
-        unsigned char randNumber = rand() % 255;
-        int x = (opcode & 0x0F00) >> 8;
-        unsigned char immediate = (opcode & 0x00FF);
-        V[x] = randNumber & immediate;
+        randNumber = rand() % 255;
+        x = (opcode & 0x0F00) >> 8;
+        immediate8 = (opcode & 0x00FF);
+        V[x] = randNumber & immediate8;
         break;
     case 0xD:
-        int x = (opcode & 0x0F00) >> 8;
-        int y = (opcode & 0x00F0) >> 4;
-        int n = (opcode & 0x000F);
+        x = (opcode & 0x0F00) >> 8;
+        y = (opcode & 0x00F0) >> 4;
+        n = (opcode & 0x000F);
         V[0xF] = screen.Draw(&V[I], V[x], V[y], n);
         break;
     case 0xE:
