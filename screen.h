@@ -44,14 +44,19 @@ void Screen::Clear()
 
 void Screen::Render()
 {
+    BeginDrawing();
+    ClearBackground(BLACK);
     for (int i = 0; i < WIDTH; i++)
     {
         for (int j = 0; j < HEIGHT; j++)
         {
-            Color pColor = screenBuffer[i][j] ? WHITE : BLACK;
-            DrawRectangle(i*FACTOR, j*FACTOR, FACTOR, FACTOR, pColor);
+            if (screenBuffer[i][j])
+            {
+            DrawRectangle(i*FACTOR, j*FACTOR, FACTOR, FACTOR, WHITE);
+            }
         }
     }
+    EndDrawing();
 }
 
 int Screen::Draw(unsigned char *spritesPtr, int X, int Y, int nibble)
@@ -64,7 +69,7 @@ int Screen::Draw(unsigned char *spritesPtr, int X, int Y, int nibble)
         for (int i = 0; i < 8; i++)
         {
             int currentX = (X + i) % WIDTH;
-            int currentBit = GetBit(byte, i);
+            int currentBit = GetBit(byte, 7-i);
             screenBuffer[currentX][currentY] ^= currentBit;
             colisionFlag = (screenBuffer[currentX][currentY] & currentBit) ? TRUE : FALSE;
         }

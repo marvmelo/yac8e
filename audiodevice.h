@@ -22,7 +22,7 @@ class AudioDevice
 private:
     AudioStream stream;
 public:
-    AudioDevice(/* args */);
+    AudioDevice();
     void Start();
     void Stop();
     int IsPlaying();

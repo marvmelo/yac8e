@@ -3,16 +3,18 @@
 #include <chrono>
 #include <thread>
 #include "chip8.h"
+#include "timer.h"
 #define WIDTH 64
 #define HEIGHT 32
 #define FACTOR 10
+#define CLOCK 60.0f
 
 using namespace std;
 
 int main()
 {
     ifstream ROMFile;
-    ROMFile.open("roms/Pong (1 player).ch8", ios::binary|ios::ate);
+    ROMFile.open("roms/Life [GV Samways, 1980].ch8", ios::binary|ios::ate);
     int size = (int)ROMFile.tellg();
     ROMFile.seekg(0);
     char ROMArray[size];
@@ -20,11 +22,14 @@ int main()
     ROMFile.read(ROMArray, size);
     ROMFile.close();
     InitWindow(WIDTH*FACTOR, HEIGHT*FACTOR, "Yet Another Chip-8 Emulator");
+    SetTargetFPS(60);
     Chip8 chip8(ROMArray, size);
-    while (1)
+    while (!WindowShouldClose())
     {
+        double startTime = GetTime();
         chip8.Cycle();    
-        this_thread::sleep_for(chrono::nanoseconds(16));
+        WaitCycle(startTime, 1.0f/CLOCK);
     }
+    CloseWindow();
     return 0;
 }
