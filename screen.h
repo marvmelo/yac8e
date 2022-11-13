@@ -3,7 +3,7 @@
 #include "misc.h"
 #define WIDTH 64
 #define HEIGHT 32
-#define FACTOR 10
+#define FACTOR 20
 #define TRUE 1
 #define FALSE 0
 
@@ -74,6 +74,5 @@ int Screen::Draw(unsigned char *spritesPtr, int X, int Y, int nibble)
             colisionFlag = (screenBuffer[currentX][currentY] & currentBit) ? TRUE : FALSE;
         }
     }
-    Render();
     return colisionFlag;
 }

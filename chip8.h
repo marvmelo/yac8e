@@ -7,7 +7,7 @@
 #include "audiodevice.h"
 #define WIDTH 64
 #define HEIGHT 32
-#define FACTOR 10
+#define FACTOR 20
 #define TRUE 1
 #define FALSE 0
 
@@ -28,7 +28,7 @@ private:
     Screen screen;
     AudioDevice audioDevice;
 
-    KeyboardKey keys[16];
+    int keys[16];
 
     unsigned short int Fetch();
     void DecodeExecute(unsigned short int);
@@ -41,7 +41,7 @@ private:
 
 public:
     Chip8(char *, int);
-    void Cycle();
+    void Cycle(int *);
 };
 
 Chip8::Chip8(char *ROMArray, int size)
@@ -62,19 +62,12 @@ Chip8::Chip8(char *ROMArray, int size)
     SP = -1;
     for (int i = 0; i < 16; i++)
     {
-        stack[i] = 0;
+        keys[i] = 0;
     }
-    screen = Screen();
-    audioDevice =AudioDevice();
-    KeyboardKey keysTemp[16] = {KEY_X, KEY_ONE, KEY_TWO, KEY_THREE,
-                                KEY_Q, KEY_W, KEY_E, KEY_A,
-                                KEY_S, KEY_D, KEY_Z, KEY_C,
-                                KEY_FOUR, KEY_R, KEY_F, KEY_V};
     for (int i = 0; i < 16; i++)
     {
-        keys[i] = keysTemp[i];
+        stack[i] = 0;
     }
-    
     unsigned char fontSet[80]  =
         {
         0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -94,11 +87,10 @@ Chip8::Chip8(char *ROMArray, int size)
         0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
         0xF0, 0x80, 0xF0, 0x80, 0x80  // F
         };
-        for (int i = 0; i < 80; i++)
-        {
-            memory[i] = fontSet[i];
-        }
-        
+    for (int i = 0; i < 80; i++)
+    {
+        memory[i] = fontSet[i];
+    }
 }
 
 unsigned short int Chip8::Fetch()
@@ -185,19 +177,16 @@ void Chip8::ExecSet(unsigned short int opcode)
 
 void Chip8::WaitKeyPress(unsigned short int opcode)
 {
-    int keyHasBeenPressed = FALSE;
     int x = (opcode & 0x0F00) >> 8;
-    while (!keyHasBeenPressed)
+    for (int i = 0; i < 16; i++)
     {
-        for (int i = 0; i < 16; i++)
+        if (keys[i])
         {
-            if (IsKeyPressed(keys[i]))
-            {
-                keyHasBeenPressed = TRUE;
-                V[x] = i;
-            }
+            V[x] = i;
+            return;
         }
     }
+    PC = PC - 2;
 }
 
 
@@ -253,10 +242,10 @@ void Chip8::SkipIfKeyDown(unsigned short int opcode)
     switch (opcodeSufix)
     {
     case 0x9E:
-        PC = IsKeyPressed(keys[V[x]]) ? PC+2 : PC;
+        PC = keys[V[x]] ? PC+2 : PC;
         break;
     case 0xA1:
-        PC = IsKeyPressed(keys[V[x]]) ? PC : PC+2;
+        PC = keys[V[x]] ? PC : PC+2;
         break;
     default:
         cout << "Opcode " << setfill('0') << setw(4) << hex << opcode << "not recognized.";
@@ -350,8 +339,13 @@ void Chip8::DecodeExecute(unsigned short int opcode)
     }
 }
 
-void Chip8::Cycle()
+void Chip8::Cycle(int keysPressed[16])
 {
+    for (int i = 0; i < 16; i++)
+    {
+        keys[i] = keysPressed[i];
+    }
+    
     if (delayTimer>0)
     {
         delayTimer--;
@@ -371,4 +365,5 @@ void Chip8::Cycle()
     }
     unsigned short int opcode = Fetch();
     DecodeExecute(opcode);
+    screen.Render();
 }
