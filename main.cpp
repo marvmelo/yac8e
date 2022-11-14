@@ -10,10 +10,15 @@
 
 using namespace std;
 
-int main()
+int main(int argc, char **argv)
 {
+    if (argc!=2)
+    {
+        cout << "Give a ROM name";
+        return 0;
+    }
     ifstream ROMFile;
-    ROMFile.open("roms/Life [GV Samways, 1980].ch8", ios::binary|ios::ate);
+    ROMFile.open(argv[1], ios::binary|ios::ate);
     int size = (int)ROMFile.tellg();
     ROMFile.seekg(0);
     char ROMArray[size];
